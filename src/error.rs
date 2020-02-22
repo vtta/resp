@@ -1,4 +1,4 @@
-use std::{error, fmt, result};
+use std::{error, fmt, io, result, string};
 
 use serde::{de, ser};
 
@@ -10,6 +10,12 @@ pub type Result<T> = result::Result<T, Error>;
 pub enum Error {
     /// Error that only contains error message, usually came from ser/de error
     Msg(String),
+    /// Due to restriction of RESP, array len must known to be used as prefix
+    LenNotKnown,
+    /// Write error
+    Io,
+    /// Write buf cannot be represented by valid UTF-8 string
+    Utf8,
 }
 
 impl de::Error for Error {
@@ -41,5 +47,17 @@ impl fmt::Display for Error {
 impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         None
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(_: io::Error) -> Self {
+        Error::Io
+    }
+}
+
+impl From<string::FromUtf8Error> for Error {
+    fn from(_: string::FromUtf8Error) -> Self {
+        Error::Utf8
     }
 }
